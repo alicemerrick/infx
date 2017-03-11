@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+
+body {
+  font: 11px sans-serif;
+  font-family: "avenir next",sans-serif;
+
+}
+
+.axis line,
+.axis text {
+  font: 11px sans-serif;
+}
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+</style>
+<body>
+  <link href="style.css" rel="stylesheet">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="chroma.min.js"></script>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+  <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+  <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script src="https://d3js.org/topojson.v2.min.js"></script>
+  <script src="https://d3js.org/d3-queue.v3.min.js"></script>
+
+
+
+  <h1 id="title">
+    <p>Margin of Trump Vote vs Foreign-born Population per County</p>
+  </h1>
+  <div id="controls">
+    <!--label for the type dropdown-->
+    <h2>Filters:</h2>
+
+      <!--create the sliders here (with labels to show the selected range)-->
+      <!-- <br> -->
+      <!-- <p>By Total Population</p>
+      <div id="totalpop" class="slider-range"></div>
+      <label for="popamount">Population range:</label>
+      <input type="text" id="popamount" readonly style="border:0; color:#f6931f; font-weight:bold;"> -->
+
+      <!-- <h3>By Foreign-born Population</h3>
+      <div id="foreignpop" class="slider-range"></div>
+      <label for="percentamount">Percentage range:</label>
+      <input type="text" id="percentamount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+
+        <h3>By Trump Margin</h3>
+      <div id="trumpmargin" class="slider-range"></div>
+      <label for="marginamount">Percentage range:</label>
+      <input type="text" id="marginamount" readonly style="border:0; color:#f6931f; font-weight:bold;"> -->
+
+    <section id = "dropdownsection">
+      <h3>By State</h3>
+      <select id="myselectform">
+        <option value="all">All</option>
+        <option value="AL">Alabama</option>
+        <option value="AK">Alaska</option>
+        <option value="AZ">Arizona</option>
+        <option value="AR">Arkansas</option>
+        <option value="CA">California</option>
+        <option value="CO">Colorado</option>
+        <option value="CT">Connecticut</option>
+        <option value="DE">Delaware</option>
+        <option value="DC">District Of Columbia</option>
+        <option value="FL">Florida</option>
+        <option value="GA">Georgia</option>
+        <option value="HI">Hawaii</option>
+        <option value="ID">Idaho</option>
+        <option value="IL">Illinois</option>
+        <option value="IN">Indiana</option>
+        <option value="IA">Iowa</option>
+        <option value="KS">Kansas</option>
+        <option value="KY">Kentucky</option>
+        <option value="LA">Louisiana</option>
+        <option value="ME">Maine</option>
+        <option value="MD">Maryland</option>
+        <option value="MA">Massachusetts</option>
+        <option value="MI">Michigan</option>
+        <option value="MN">Minnesota</option>
+        <option value="MS">Mississippi</option>
+        <option value="MO">Missouri</option>
+        <option value="MT">Montana</option>
+        <option value="NE">Nebraska</option>
+        <option value="NV">Nevada</option>
+        <option value="NH">New Hampshire</option>
+        <option value="NJ">New Jersey</option>
+        <option value="NM">New Mexico</option>
+        <option value="NY">New York</option>
+        <option value="NC">North Carolina</option>
+        <option value="ND">North Dakota</option>
+        <option value="OH">Ohio</option>
+        <option value="OK">Oklahoma</option>
+        <option value="OR">Oregon</option>
+        <option value="PA">Pennsylvania</option>
+        <option value="RI">Rhode Island</option>
+        <option value="SC">South Carolina</option>
+        <option value="SD">South Dakota</option>
+        <option value="TN">Tennessee</option>
+        <option value="TX">Texas</option>
+        <option value="UT">Utah</option>
+        <option value="VT">Vermont</option>
+        <option value="VA">Virginia</option>
+        <option value="WA">Washington</option>
+        <option value="WV">West Virginia</option>
+        <option value="WI">Wisconsin</option>
+        <option value="WY">Wyoming</option>
+      </select>
+    </section>
+
+      <script>
+      document.getElementById("myselectform").onchange = function(){
+        filterType(this.value); }
+        </script>
+
+    <section id = "slidersection">
+      <h3>By Total Votes</h3>
+      <div id="totalvotes" class="slider-range"></div>
+      <label for="voteamount">Votes range:</label>
+      <input type="text" id="voteamount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+    </section>
+
+    <section id = "mapsection">
+      <h3>Maps</h3>
+      <form name="radiobuttons">
+        <input type="radio" class="radio" id="electionradio" name="mapsradio" value="trump_margin" checked=true> Election Results<br>
+        <input type="radio" class="radio" id="foreignradio" name="mapsradio" value="foreign_pop"> Percentage of Foreign Born Population<br>
+      </form>
+    </section>
+
+    </div>
+  <!-- <div id="visualization"> -->
+  <button>Reset</button>
+  <svg class="chart"></svg>
+  <svg class="map" width="960" height="600"></svg>
+
+
+
+<!-- </div> -->
+
+
+				<!--create the dropdown here-->
+
+
+
+
+    <script src="amerrick.js"></script>
+</body>
+</html>
