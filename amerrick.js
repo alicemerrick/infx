@@ -41,7 +41,7 @@ d3.csv("joinedData.csv", function(error, joinedData) {
      .await(function(error, us) {
        if (error) throw error;
        counties = topojson.feature(us, us.objects.counties).features;
-       states = topojson.feature(us, us.objects.states).features;
+       states = topojson.feature(us, us.objects.states, function(a, b) { return a !== b; });
 
        drawMap("trump_margin");
        // drawForeign();
@@ -196,7 +196,7 @@ var color = d3.scaleThreshold()
       });
 
       svg.append("path")
-            .data(states)
+            .datum(states)
             .attr("class", "states")
             .attr("d", path);
 
