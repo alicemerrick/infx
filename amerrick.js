@@ -1,5 +1,5 @@
-var width = 600;
-var height = 600;
+var width = 500;
+var height = 500;
 var margin = {top: 40, right: 40, bottom: 40, left: 40};
 var w = width - margin.left - margin.right;
 var h = height - margin.top - margin.bottom;
@@ -31,6 +31,9 @@ d3.csv("joinedData.csv", function(error, joinedData) {
     // electionscale = d3.scaleQuantile()
     //   .domain(dataset.map(function(d) { return d.trump_margin; }))
     //   .range(d3.schemeRdBu[10]);
+    //
+    //   foreignscale = d3.scaleSequential(d3.interpolateBlues)
+    //     .domain([0,12]);
 
 
     //all the data is now loaded, so draw the initial vis
@@ -70,8 +73,8 @@ var chart = d3.select(".chart")
 /////////////////////MAP//////////////////////
 // var col = d3.scaleOrdinal(d3.schemeCategory10);
 // var electionscale = d3.scaleSequential(d3.schemeRdBu).domain([1, -1]);
-
-// var foreignscale = d3.scaleSequential(d3.schemeBlues).domain([1, -1]);
+//
+// var foreignscale = d3.scaleSequential(d3.schemeBlues).domain([1, 0]);
 
 var svg = d3.select(".map"),
     width = +svg.attr("width"),
@@ -86,9 +89,17 @@ var path = d3.geoPath();
 
 
 var electionscale = chroma.scale('RdBu').domain([50,-50]);
-var foreignscale = chroma.scale('GnBu').domain([0, 40]);
+var foreignscale = chroma.scale('GnBu').domain([0, 10]);
 
-var colorscale;
+var electionlegend = d3.scaleThreshold()
+    .domain(d3.range(1, 11))
+    .range(d3.schemeRdBu[11]);
+
+var foreignlegend = d3.scaleThreshold()
+    .domain(d3.range(2, 10))
+    .range(d3.schemeGnBu[9]);
+
+var colorscale, color;
 var mapAttr = "trump_margin";
 // var g = svg.append("g")
 //     .attr("class", "key")
@@ -101,9 +112,11 @@ function drawMap(highlightId) {
 
 if (mapAttr == "foreign_pop") {
   colorscale = foreignscale;
+  color = foreignlegend;
 }
 else {
   colorscale = electionscale;
+  color = electionlegend;
 }
 
   //LEGEND//
@@ -115,17 +128,6 @@ var y = d3.scaleLinear()
       .domain([50, -50])
       .rangeRound([600, 860]);
 
-// var color = d3.scaleThreshold()
-//     .domain(d3.range(1, 11))
-//     .range(d3.schemeRdBu[11]);
-
-var color = d3.scaleThreshold()
-    .domain(d3.range(2, 10))
-    .range(d3.schemeBlues[9]);
-
-// var color = d3.scaleThreshold()
-//     .domain(d3.range(1, 11))
-//     .range(d3.schemeBlues[11]);
 
     svg.selectAll("g").remove();
 
