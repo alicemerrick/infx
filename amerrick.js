@@ -13,16 +13,16 @@ d3.csv("joinedData.csv", function(error, joinedData) {
     //read in the data
     if (error) return console.warn(error);
     joinedData.forEach(function(d) {
-      d.fips= +d.fips;
-	    d.trump_margin = +d.trump_margin;
-	    d.foreign_pop = +d.foreign_pop;
-      if (d.foreign_pop == 0) {
-        d.foreign_pop = +d.foreign_pop_09;
-      }
-      d.total_votes = +d.total_votes;
-      // election.set(d.fips, d.trump_margin);
-      // foreign.set(d.fips, +d.foreign_pop);
-      supermap.set(d.fips, d);
+	d.fips= +d.fips;
+	d.trump_margin = +d.trump_margin;
+	d.foreign_pop = +d.foreign_pop;
+	if (d.foreign_pop == 0) {
+            d.foreign_pop = +d.foreign_pop_09;
+	}
+	d.total_votes = +d.total_votes;
+	// election.set(d.fips, d.trump_margin);
+	// foreign.set(d.fips, +d.foreign_pop);
+	supermap.set(d.fips, d);
     });
     //dataset is the full dataset -- maintain a copy of this at all times
     dataset = joinedData;
@@ -40,15 +40,15 @@ d3.csv("joinedData.csv", function(error, joinedData) {
     drawVis(dataset);
 
     d3.queue()
-	   .defer(d3.json, "https://d3js.org/us-10m.v1.json")
-     .await(function(error, us) {
-       if (error) throw error;
-       counties = topojson.feature(us, us.objects.counties).features;
-       states = topojson.feature(us, us.objects.states, function(a, b) { return a !== b; });
+	.defer(d3.json, "https://d3js.org/us-10m.v1.json")
+	.await(function(error, us) {
+	    if (error) throw error;
+	    counties = topojson.feature(us, us.objects.counties).features;
+	    states = topojson.feature(us, us.objects.states, function(a, b) { return a !== b; });
 
-       drawMap("trump_margin");
-       // drawForeign();
-     });
+	    drawMap("trump_margin");
+	    // drawForeign();
+	});
 });
 
 //none of these depend on the data being loaded so fine to define here
@@ -88,16 +88,9 @@ var supermap = d3.map();
 var path = d3.geoPath();
 
 
-var electionscale = chroma.scale('RdBu').domain([50,-50]);
-var foreignscale = chroma.scale('GnBu').domain([0, 10]);
-
-var electionlegend = d3.scaleThreshold()
-    .domain(d3.range(1, 11))
-    .range(d3.schemeRdBu[11]);
-
-var foreignlegend = d3.scaleThreshold()
-    .domain(d3.range(2, 10))
-    .range(d3.schemeGnBu[9]);
+var BuRd = chroma.brewer.RdBu.reverse();
+var electionscale = chroma.scale(BuRd).domain([-50,50]).classes(10);
+var foreignscale = chroma.scale('GnBu').domain([0.5, 60]).classes(chroma.limits(chroma.analyze([0.5, 60]), 'l', 10));
 
 var colorscale, color;
 var mapAttr = "trump_margin";
@@ -110,43 +103,72 @@ var mapAttr = "trump_margin";
 
 function drawMap(highlightId) {
 
-if (mapAttr == "foreign_pop") {
-  colorscale = foreignscale;
-  color = foreignlegend;
-}
-else {
-  colorscale = electionscale;
-  color = electionlegend;
-}
+    var text, domain, y, ticks;
+    if (mapAttr == "foreign_pop") {
+	colorscale = foreignscale;
+	text = "Foreign-born Population";
+	domain = [0.1,100];
+	y = d3.scaleLog()
+            .domain(domain)
+            .rangeRound([600, 860]);
+	ticks = 3;
+    }
+    else {
+	colorscale = electionscale;
+	text = "Trump Margin";
+	domain = [-50,50];
+	y = d3.scaleLinear()
+            .domain(domain)
+            .rangeRound([600, 860]);
+	ticks = 10;
+    }
 
-  //LEGEND//
-var x = d3.scaleLinear()
-      .domain([1, 11])
-      .rangeRound([600, 860]);
-
-var y = d3.scaleLinear()
-      .domain([50, -50])
-      .rangeRound([600, 860]);
-
+    //LEGEND//
+    var x = d3.scaleLinear()
+        .domain([0, ticks])
+        .rangeRound([600, 860]);
+    /*
+    var y = d3.scaleLinear()
+        .domain(domain)
+        .rangeRound([600, 860]);
+    */
 
     svg.selectAll("g").remove();
 
     var g = svg.append("g")
-        .attr("class", "key")
-        .attr("transform", "translate(0,40)");
-
+    .attr("class", "key")
+    .attr("transform", "translate(0,40)");
+    for (var i = 0; i < ticks; i++) {
+      var leftstart = x(i);
+      var tickwidth = (x(ticks) - x(0)) / ticks;
+      for (var j = 0; j < tickwidth; j++) {
+        if (mapAttr == "foreign_pop") {
+          fillcolor = colorscale(domain[0] * Math.pow(10, i + (j/tickwidth)));
+        }
+        else {
+          fillcolor = colorscale(domain[0] + (i*10) + ((10/tickwidth)*j));
+        }
+    g.append("rect")
+      .attr("height", 8)
+      .attr("x", leftstart + j)
+      .attr("width", 1)
+      .attr("fill", fillcolor);
+	}
+    }
+    /*
     g.selectAll("rect")
-      .data(color.range().map(function(d) {
-          d = color.invertExtent(d);
-          if (d[0] == null) d[0] = x.domain()[0];
-          if (d[1] == null) d[1] = x.domain()[1];
-          return d;
+	.data(color.range().map(function(d) {
+            d = color.invertExtent(d);
+            if (d[0] == null) d[0] = x.domain()[0];
+            if (d[1] == null) d[1] = x.domain()[1];
+            return d;
         }))
-      .enter().append("rect")
+	.enter().append("rect")
         .attr("height", 8)
         .attr("x", function(d) { return x(d[0]); })
         .attr("width", function(d) { return x(d[1]) - x(d[0]); })
         .attr("fill", function(d) { return color(d[0]); });
+    */
 
     g.append("text")
         .attr("class", "caption")
@@ -155,61 +177,80 @@ var y = d3.scaleLinear()
         .attr("fill", "#000")
         .attr("text-anchor", "start")
         .attr("font-weight", "bold")
-        .text("Trump Margin");
+        .text(text);
+    if (mapAttr == "foreign_pop") {
+	g.call(d3.axisBottom(y)
+	   .ticks(3)
+           .tickSize(13)
+           .tickFormat(function(y, i) { return y + "%"; }))
+        .select(".domain")
+            .remove();
+    }
+    else {
+    g.call(d3.axisBottom(y)
+           .tickSize(13)
+           .tickFormat(function(y, i) { return y + "%"; }))
+        .select(".domain")
+            .remove();
+    }
 
-      g.call(d3.axisBottom(y)
-          .tickSize(13)
-          .tickFormat(function(y, i) { return y + "%"; }))
-          // .tickValues(color.domain()))
-          .select(".domain")
-          .remove();
 
 
-
-	svg.append("g")
-	    .attr("class", "counties")
-	    .selectAll("path")
-	    .data(counties)
-	    .enter().append("path")
-      .attr("stroke-width", ".25px")
-      .attr("stroke", function(d) { if (highlightId!= undefined&&(+d.id) == highlightId) { return "black"; } return "gray";})
-	    .attr("fill", function(d) { var row = supermap.get(+d.id);
-        if (row != undefined)
-          {
-            if (highlightId!= undefined&&(+d.id) == highlightId) return "gray";
-            else return colorscale(supermap.get(+d.id)[mapAttr]);
-          }
-        return 0;
-	    })
-	    .attr("d", path)
-      .on("mouseover", function(d) {
-        tooltip.transition()
-          .duration(300)
-          .style("opacity", .9);
-        var text = supermap.get(+d.id).county_name + ", " + supermap.get(+d.id).state_abbr + "<br>" + supermap.get(+d.id).foreign_pop + "% Foreign-born Population" + "<br>" + Math.round(supermap.get(+d.id).trump_margin*10)/10 + "% Trump Margin";
-        tooltip.html(text)
-          .style("left", (d3.event.pageX + 5) + "px")
-          .style("top", (d3.event.pageY - 48) + "px");
+    svg.append("g")
+	.attr("class", "counties")
+	.selectAll("path")
+	.data(counties)
+	.enter().append("path")
+  .attr("id", function (d) { return "fips" + (+d.id); })
+	.attr("stroke-width", ".25px")
+	.attr("stroke", "gray")
+	.attr("fill",
+	      function(d) {
+		  var row = supermap.get(+d.id);
+		  if (row != undefined)
+		  {
+		    //   if (highlightId!= undefined&&(+d.id) == highlightId)
+			  // return "gray";
+		    //   else
+			  return colorscale(supermap.get(+d.id)[mapAttr]);
+		  }
+		  return 0;
+	      })
+	.attr("d", path)
+	.on("mouseover", function(d) {
+            tooltip.transition()
+		.duration(300)
+		.style("opacity", .9);
+            var text =
+		supermap.get(+d.id).county_name + ", " +
+		supermap.get(+d.id).state_abbr + "<br>" +
+		supermap.get(+d.id).foreign_pop +
+		"% Foreign-born Population" + "<br>" +
+		Math.round(supermap.get(+d.id).trump_margin*10)/10 +
+		"% Trump Margin";
+            tooltip.html(text)
+		.style("left", (d3.event.pageX + 5) + "px")
+		.style("top", (d3.event.pageY - 60) + "px");
         })
-      .on("mouseout", function(d) {
-        tooltip.transition()
-          .duration(400)
-          .style("opacity", 0);
-      });
+	.on("mouseout", function(d) {
+            tooltip.transition()
+		.duration(400)
+		.style("opacity", 0);
+	});
 
-      svg.append("path")
-            .datum(states)
-            .attr("class", "states")
-            .attr("d", path);
+    svg.append("path")
+        .datum(states)
+        .attr("class", "states")
+        .attr("d", path);
 
 
 }
 
 d3.selectAll("input[type=radio]").on("change", function() {
-    mapAttr = d3.select('input[type=radio]:checked').attr('value');
-
-	drawMap();
-
+    mapAttr =
+	d3.select('input[type=radio]:checked')
+	.attr('value');
+    drawMap();
 });
 
 //SCATTERPLOT//
@@ -257,14 +298,14 @@ chart.append("text")
 function drawVis(dataset) { //draw the circiles initially and on each interaction with a control
 
     var circle = chart.selectAll("circle")
-	   .data(dataset);
+	.data(dataset);
 
     circle.attr("cx", function(d) { return x(d.foreign_pop);  })
-        	.attr("cy", function(d) { return y(d.trump_margin);  })
-          .style("stroke", "white")
-          .style("opacity", .9)
-          .style("fill", "steelblue" );
-         //	.style("fill", function(d) { return electionscale(d.trump_margin); });
+        .attr("cy", function(d) { return y(d.trump_margin);  })
+        .style("stroke", "white")
+        .style("opacity", .9)
+        .style("fill", "steelblue" );
+    //	.style("fill", function(d) { return electionscale(d.trump_margin); });
 
     circle.exit().remove();
 
@@ -275,36 +316,42 @@ function drawVis(dataset) { //draw the circiles initially and on each interactio
         .style("stroke", "white")
         .style("opacity", .9)
         .style("fill", "steelblue" )
-     // 	.style("fill", function(d) { return electionscale(d.trump_margin); })
+    // 	.style("fill", function(d) { return electionscale(d.trump_margin); })
         .on("mouseover", function(d) {
-          d3.select(this).transition()
-            .duration(500)
-            .attr("r", 6)
-            .style("stroke", "red");
+            d3.select(this)
+            .raise()
+            .transition()
+          		// .duration(500)
+          		.attr("r", 6)
+          		.style("fill", "crimson");
             // console.log(d3.select(this));
 
-            drawMap(d.fips);
-
-          tooltip.transition()
-				       .duration(200)
-				       .style("opacity", .9);
-				       tooltip.html(d.county_name+", "+ d.state_abbr+
-						    "<br>Foreign-born Population: " + d.foreign_pop + "%<br>Trump Margin: " + Math.round(d.trump_margin*10)/10 + "%")
-				       .style("left", (d3.event.pageX + 5) + "px")
-				       .style("top", (d3.event.pageY - 28) + "px");
-
-				     })
-        .on("mouseout", function(d) {
-          d3.select(this).transition()
-            .duration(500)
-            .attr("r", 3)
-            .style("stroke", "white");
-
-            drawMap();
+            d3.selectAll("#fips" + d.fips)
+                .attr("class", "hovered-county");
 
             tooltip.transition()
+          		// .duration(300)
+          		.style("opacity", 1);
+          	    tooltip.html(d.county_name+", "+ d.state_abbr+
+          			 "<br>Foreign-born Population: " + d.foreign_pop + "%<br>Trump Margin: " + Math.round(d.trump_margin*10)/10 + "%")
+          		.style("left", (d3.event.pageX + 5) + "px")
+          		.style("top", (d3.event.pageY - 60) + "px");
+
+	})
+        .on("mouseout", function(d) {
+            d3.select(this).transition()
           		.duration(500)
-          		.style("opacity", 0);
+          		.attr("r", 3)
+              .style("fill", "steelblue")
+          		.style("stroke", "white");
+            d3.selectAll("#fips" + d.fips)
+              .attr("class", "counties");
+
+            // drawMap();
+
+            tooltip.transition()
+          	.duration(500)
+          	.style("opacity", 0);
         });
 
 
@@ -378,12 +425,12 @@ var patt = new RegExp("all");
 //dropdown filter
 function filterType(mystate) {
     var res = patt.test(mystate);
-  if(res){
-    ndata = dataset;
-  }
-  else {
-    ndata = dataset.filter(function(d) {return d["state_abbr"] == mystate; });
-  }
+    if(res){
+	ndata = dataset;
+    }
+    else {
+	ndata = dataset.filter(function(d) {return d["state_abbr"] == mystate; });
+    }
     filterData(ranges);
 
 }
